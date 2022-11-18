@@ -18,7 +18,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	engine := html.New("./views", ".dump")
+	engine := html.New("./views", ".html")
 	app := fiber.New(fiber.Config{
 		Views: engine,
 	})
@@ -49,7 +49,7 @@ func getHandler(c *fiber.Ctx, db *sql.DB) error {
 		rows.Scan(&description)
 		diseaseTypeList = append(diseaseTypeList, description)
 	}
-	return c.Render("mydump", fiber.Map{
+	return c.Render("index", fiber.Map{
 		"DiseaseTypes": diseaseTypeList,
 	})
 }
