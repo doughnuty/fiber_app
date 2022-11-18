@@ -12,13 +12,13 @@ import (
 )
 
 func main() {
-	connStr := os.Getenv("DATABASE_URL")
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		log.Fatal(err)
-	}
+	// connStr := os.Getenv("DATABASE_URL")
+	// db, err := sql.Open("postgres", connStr)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 
-	engine := html.New("./views", ".html")
+	engine := html.New("./views", ".dump")
 	app := fiber.New(fiber.Config{
 		Views: engine,
 	})
@@ -28,28 +28,26 @@ func main() {
 	}
 
 	app.Get("/diseasetype", func(c *fiber.Ctx) error {
-		return getHandler(c, db)
+		return c.SendFile("./views/mydump.dump")
 	})
 
-	app.Static("/diseasetype", "./public")
+	app.Static("/", "./public")
 	log.Fatalln(app.Listen(fmt.Sprintf(":%v", port)))
 }
 
 func getHandler(c *fiber.Ctx, db *sql.DB) error {
-	var description string
-	var diseaseTypeList []string
-	rows, err := db.Query("select description from diseasetype")
-	defer rows.Close()
-	if err != nil {
-		log.Println(err)
-		c.JSON("Internal error")
-		return err
-	}
-	for rows.Next() {
-		rows.Scan(&description)
-		diseaseTypeList = append(diseaseTypeList, description)
-	}
-	return c.Render("index", fiber.Map{
-		"DiseaseTypes": diseaseTypeList,
-	})
+	// var description string
+	// var diseaseTypeList []string
+	// rows, err := db.Query("select description from diseasetype")
+	// defer rows.Close()
+	// if err != nil {
+	// 	log.Println(err)
+	// 	c.JSON("Internal error")
+	// 	return err
+	// }
+	// for rows.Next() {
+	// 	rows.Scan(&description)
+	// 	diseaseTypeList = append(diseaseTypeList, description)
+	// }
+	return c.SendFile("mydump")
 }
