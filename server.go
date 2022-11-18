@@ -12,11 +12,11 @@ import (
 )
 
 func main() {
-	// connStr := os.Getenv("DATABASE_URL")
-	// db, err := sql.Open("postgres", connStr)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
+	connStr := os.Getenv("DATABASE_URL")
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	engine := html.New("./views", ".dump")
 	app := fiber.New(fiber.Config{
@@ -28,7 +28,7 @@ func main() {
 	}
 
 	app.Get("/diseasetype", func(c *fiber.Ctx) error {
-		return c.SendFile("./views/mydump.dump")
+		return getHandler(c, db)
 	})
 
 	app.Static("/", "./public")
@@ -36,18 +36,20 @@ func main() {
 }
 
 func getHandler(c *fiber.Ctx, db *sql.DB) error {
-	// var description string
-	// var diseaseTypeList []string
-	// rows, err := db.Query("select description from diseasetype")
-	// defer rows.Close()
-	// if err != nil {
-	// 	log.Println(err)
-	// 	c.JSON("Internal error")
-	// 	return err
-	// }
-	// for rows.Next() {
-	// 	rows.Scan(&description)
-	// 	diseaseTypeList = append(diseaseTypeList, description)
-	// }
-	return c.SendFile("mydump")
+	var description string
+	var diseaseTypeList []string
+	rows, err := db.Query("select description from diseasetype")
+	defer rows.Close()
+	if err != nil {
+		log.Println(err)
+		c.JSON("Internal error")
+		return err
+	}
+	for rows.Next() {
+		rows.Scan(&description)
+		diseaseTypeList = append(diseaseTypeList, description)
+	}
+	return c.Render("mydump", fiber.Map{
+		"DiseaseTypes": diseaseTypeList,
+	})
 }
