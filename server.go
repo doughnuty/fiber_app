@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	connStr := "postgresql://postgres:psql@localhost:5432/meddb?sslmode=disable"
+	connStr := os.Getenv("DATABASE_URL")
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		log.Fatal(err)
