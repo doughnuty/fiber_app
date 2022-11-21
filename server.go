@@ -47,7 +47,7 @@ func main() {
 	})
 
 	app.Post("/login", func(c *fiber.Ctx) error {
-		return postLoginHandler(c)
+		return postLoginHandler(c, db)
 	})
 
 	app.Static("/", "./public")
@@ -61,19 +61,19 @@ func getDiseaseTHandler(c *fiber.Ctx, db *sql.DB) error {
 		log.Printf("No cookie found")
 		return c.Redirect("/login")
 	}
-	// var description string
+	var description string
 	var diseaseTypeList []string
-	rows, err := db.Query("select * from diseasetype")
+	rows, err := db.Query("select description from diseasetype")
 	defer rows.Close()
 	if err != nil {
 		log.Println(err)
 		c.JSON("Internal error")
 		return err
 	}
-	// for rows.Next() {
-	// 	rows.Scan(&description)
-	// 	diseaseTypeList = append(diseaseTypeList, description)
-	// }
+	for rows.Next() {
+		rows.Scan(&description)
+		diseaseTypeList = append(diseaseTypeList, description)
+	}
 	return c.Render("disease-types/index", fiber.Map{
 		"DiseaseTypes": diseaseTypeList,
 	})
@@ -83,7 +83,7 @@ func getLoginHandler(c *fiber.Ctx) error {
 	return c.Render("login/index", fiber.Map{})
 }
 
-func postLoginHandler(c *fiber.Ctx) error {
+func postLoginHandler(c *fiber.Ctx, db *sql.DB) error {
 	type response struct {
 		Email string
 	}
@@ -94,9 +94,11 @@ func postLoginHandler(c *fiber.Ctx) error {
 		log.Printf("An error occured: %v", err)
 		return c.SendString(err.Error())
 	}
-
 	// fmt.Printf("%v", r.Email)
-	if r.Email != "malika" {
+	var email string
+	err := db.QueryRow("select email from users where email=?", r.Email).Scan(&email)
+	if err != nil {
+		log.Printf("query error: %v\n", err)
 		return c.SendString("Email of Public Servant not found")
 	}
 
