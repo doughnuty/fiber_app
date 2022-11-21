@@ -99,7 +99,11 @@ func postLoginHandler(c *fiber.Ctx, db *sql.DB) error {
 	err := db.QueryRow("select email from users where email=$1", r.Email).Scan(&email)
 	if err != nil {
 		log.Printf("query error: %v\n", err)
-		return c.SendString("Email of Public Servant not found")
+		m := map[string]string{
+			"content": err.Error(),
+		}
+		c.JSON(m)
+		return c.Redirect("/login", fiber.StatusUnauthorized)
 	}
 
 	cookie := new(fiber.Cookie)
