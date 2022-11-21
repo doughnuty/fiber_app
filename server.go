@@ -143,7 +143,7 @@ func postLoginHandler(c *fiber.Ctx, db *sql.DB) error {
 
 	c.Cookie(cookie)
 
-	return c.Redirect("/diseasetype")
+	return c.Redirect("/record")
 }
 
 func postRecordHandler(c *fiber.Ctx, db *sql.DB) error {
