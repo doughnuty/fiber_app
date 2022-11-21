@@ -21,7 +21,13 @@ type Record struct {
 }
 
 func main() {
-	connStr := "postgresql://postgres:psql@localhost:5432/meddb?sslmode=disable"
+	connStr, ok := os.LookupEnv("DATABASE_URL")
+	if !ok {
+		log.Println("Couldn't get database url. Exiting")
+		return
+	} else {
+		log.Println("Database url: ", connStr)
+	}
 	log.Println(connStr)
 	db, err := sql.Open("postgres", connStr)
 	defer db.Close()
