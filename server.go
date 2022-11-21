@@ -12,6 +12,13 @@ import (
 	_ "github.com/lib/pq"
 )
 
+type Record struct {
+	cname          string
+	disease_code   string
+	total_deaths   int
+	total_patients int
+}
+
 func main() {
 	connStr, ok := os.LookupEnv("DATABASE_URL")
 	if !ok {
@@ -36,9 +43,30 @@ func main() {
 		port = "3000"
 	}
 
-	// Disease Type Methods
-	app.Get("/diseasetype", func(c *fiber.Ctx) error {
-		return getDiseaseTHandler(c, db)
+	app.Get("/", func(c *fiber.Ctx) error {
+		// check cookie
+		if email := authorize(c, db); email == "" {
+			log.Printf("No cookie found")
+			return c.Redirect("/login")
+		}
+		return c.Redirect("/record")
+	})
+
+	// Record Methods
+	app.Get("/record", func(c *fiber.Ctx) error {
+		return getRecordHandler(c, db)
+	})
+
+	app.Post("/record", func(c *fiber.Ctx) error {
+		return postRecordHandler(c, db)
+	})
+
+	app.Put("/record", func(c *fiber.Ctx) error {
+		return putRecordHandler(c, db)
+	})
+
+	app.Delete("/record", func(c *fiber.Ctx) error {
+		return deleteRecordHandler(c, db)
 	})
 
 	// Login methods
@@ -54,23 +82,16 @@ func main() {
 	log.Fatalln(app.Listen(fmt.Sprintf(":%v", port)))
 }
 
-func getDiseaseTHandler(c *fiber.Ctx, db *sql.DB) error {
+func getRecordHandler(c *fiber.Ctx, db *sql.DB) error {
 	// check cookie
-	email := c.Cookies("email")
+	email := authorize(c, db)
 	if email == "" {
-		log.Printf("No cookie found")
 		return c.Redirect("/login")
 	}
 
-	type Record struct {
-		cname          string
-		disease_code   string
-		total_deaths   int
-		total_patients int
-	}
-	var diseaseTypeList []Record
+	var recordList []Record
 	var r Record
-	rows, err := db.Query("select cname, disease_code, total_deaths, total_patients from record")
+	rows, err := db.Query("select cname, disease_code, total_deaths, total_patients from record where email=$1", email)
 	defer rows.Close()
 	if err != nil {
 		log.Println(err)
@@ -83,10 +104,10 @@ func getDiseaseTHandler(c *fiber.Ctx, db *sql.DB) error {
 			break
 		}
 
-		diseaseTypeList = append(diseaseTypeList, r)
+		recordList = append(recordList, r)
 	}
-	return c.Render("disease-types/index", fiber.Map{
-		"DiseaseTypes": diseaseTypeList,
+	return c.Render("record/index", fiber.Map{
+		"Records": recordList,
 	})
 }
 
@@ -100,13 +121,13 @@ func postLoginHandler(c *fiber.Ctx, db *sql.DB) error {
 	}
 
 	r := response{}
+	var email string
 
 	if err := c.BodyParser(&r); err != nil {
 		log.Printf("An error occured: %v", err)
 		return c.SendString(err.Error())
 	}
-	// fmt.Printf("%v", r.Email)
-	var email string
+
 	err := db.QueryRow("select email from users where email=$1", r.Email).Scan(&email)
 	if err != nil {
 		log.Printf("query error: %v\n", err)
@@ -123,4 +144,60 @@ func postLoginHandler(c *fiber.Ctx, db *sql.DB) error {
 	c.Cookie(cookie)
 
 	return c.Redirect("/diseasetype")
+}
+
+func postRecordHandler(c *fiber.Ctx, db *sql.DB) error {
+	email := authorize(c, db)
+	if email == "" {
+		return c.Redirect("/login")
+	}
+
+	newRecord := Record{}
+	if err := c.BodyParser(&newRecord); err != nil {
+		log.Printf("An error occured: %v", err)
+		return c.SendString(err.Error())
+	}
+	fmt.Printf("%v", newRecord)
+	if newRecord.cname != "" && newRecord.disease_code != "" {
+		_, err := db.Exec("INSERT into record VALUES ($1, $2, $3, $4, $5)", email, newRecord.cname, newRecord.disease_code, newRecord.total_deaths, newRecord.total_patients)
+		if err != nil {
+			log.Fatalf("An error occured while executing query: %v", err)
+		}
+	}
+
+	return c.Redirect("/record")
+}
+
+func putRecordHandler(c *fiber.Ctx, db *sql.DB) error {
+	email := authorize(c, db)
+	if email == "" {
+		return c.Redirect("/login")
+	}
+
+	olditem := c.Query("olditem")
+	newitem := c.Query("newitem")
+	db.Exec("UPDATE todos SET item=$1 WHERE item=$2", newitem, olditem)
+
+	return c.Redirect("/record")
+}
+
+func deleteRecordHandler(c *fiber.Ctx, db *sql.DB) error {
+	email := authorize(c, db)
+	if email == "" {
+		return c.Redirect("/login")
+	}
+
+	todoToDelete := c.Query("item")
+	db.Exec("DELETE from todos WHERE item=$1", todoToDelete)
+
+	return c.Redirect("/record")
+}
+
+func authorize(c *fiber.Ctx, db *sql.DB) string {
+	email := c.Cookies("email")
+	if email == "" {
+		log.Printf("No cookie found")
+		return ""
+	}
+	return email
 }
