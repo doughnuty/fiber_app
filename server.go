@@ -61,9 +61,16 @@ func getDiseaseTHandler(c *fiber.Ctx, db *sql.DB) error {
 		log.Printf("No cookie found")
 		return c.Redirect("/login")
 	}
-	var description string
-	var diseaseTypeList []string
-	rows, err := db.Query("select description from diseasetype")
+
+	type Record struct {
+		cname          string
+		disease_code   string
+		total_deaths   int
+		total_patients int
+	}
+	var diseaseTypeList []Record
+	var r Record
+	rows, err := db.Query("select cname, disease_code, total_deaths, total_patients from record")
 	defer rows.Close()
 	if err != nil {
 		log.Println(err)
@@ -71,8 +78,12 @@ func getDiseaseTHandler(c *fiber.Ctx, db *sql.DB) error {
 		return err
 	}
 	for rows.Next() {
-		rows.Scan(&description)
-		diseaseTypeList = append(diseaseTypeList, description)
+		if err = rows.Scan(&r.cname, &r.disease_code, &r.total_deaths, &r.total_patients); err != nil {
+			log.Println(err)
+			break
+		}
+
+		diseaseTypeList = append(diseaseTypeList, r)
 	}
 	return c.Render("disease-types/index", fiber.Map{
 		"DiseaseTypes": diseaseTypeList,
@@ -100,7 +111,7 @@ func postLoginHandler(c *fiber.Ctx, db *sql.DB) error {
 	if err != nil {
 		log.Printf("query error: %v\n", err)
 		return c.Status(fiber.StatusUnauthorized).Render("login/index", fiber.Map{
-			"content": err.Error(),
+			"content": "Wrong email",
 		})
 	}
 
