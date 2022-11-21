@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/template/html"
@@ -12,8 +13,16 @@ import (
 )
 
 func main() {
-	connStr := os.Getenv("DATABASE_URL")
+	connStr, ok := os.LookupEnv("DATABASE_URL")
+	if !ok {
+		log.Println("Couldn't get database url. Exiting")
+		return
+	} else {
+		log.Println("Database url: ", connStr)
+	}
+	log.Println(connStr)
 	db, err := sql.Open("postgres", connStr)
+	defer db.Close()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -27,29 +36,76 @@ func main() {
 		port = "3000"
 	}
 
+	// Disease Type Methods
 	app.Get("/diseasetype", func(c *fiber.Ctx) error {
-		return getHandler(c, db)
+		return getDiseaseTHandler(c, db)
+	})
+
+	// Login methods
+	app.Get("/login", func(c *fiber.Ctx) error {
+		return getLoginHandler(c)
+	})
+
+	app.Post("/login", func(c *fiber.Ctx) error {
+		return postLoginHandler(c)
 	})
 
 	app.Static("/", "./public")
 	log.Fatalln(app.Listen(fmt.Sprintf(":%v", port)))
 }
 
-func getHandler(c *fiber.Ctx, db *sql.DB) error {
-	var description string
+func getDiseaseTHandler(c *fiber.Ctx, db *sql.DB) error {
+	// check cookie
+	email := c.Cookies("email")
+	if email == "" {
+		log.Printf("No cookie found")
+		return c.Redirect("/login")
+	}
+	// var description string
 	var diseaseTypeList []string
-	rows, err := db.Query("select description from diseasetype")
+	rows, err := db.Query("select * from diseasetype")
 	defer rows.Close()
 	if err != nil {
 		log.Println(err)
 		c.JSON("Internal error")
 		return err
 	}
-	for rows.Next() {
-		rows.Scan(&description)
-		diseaseTypeList = append(diseaseTypeList, description)
-	}
-	return c.Render("index", fiber.Map{
+	// for rows.Next() {
+	// 	rows.Scan(&description)
+	// 	diseaseTypeList = append(diseaseTypeList, description)
+	// }
+	return c.Render("disease-types/index", fiber.Map{
 		"DiseaseTypes": diseaseTypeList,
 	})
+}
+
+func getLoginHandler(c *fiber.Ctx) error {
+	return c.Render("login/index", fiber.Map{})
+}
+
+func postLoginHandler(c *fiber.Ctx) error {
+	type response struct {
+		Email string
+	}
+
+	r := response{}
+
+	if err := c.BodyParser(&r); err != nil {
+		log.Printf("An error occured: %v", err)
+		return c.SendString(err.Error())
+	}
+
+	// fmt.Printf("%v", r.Email)
+	if r.Email != "malika" {
+		return c.SendString("Email of Public Servant not found")
+	}
+
+	cookie := new(fiber.Cookie)
+	cookie.Name = "email"
+	cookie.Value = r.Email
+	cookie.Expires = time.Now().Add(5 * time.Minute)
+
+	c.Cookie(cookie)
+
+	return c.Redirect("/diseasetype")
 }
