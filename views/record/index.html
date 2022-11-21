@@ -9,8 +9,8 @@
    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.standalone.min.css"/>
 
-
    <title>Records</title>
+
 </head>
 <body>
    <div class="container m-5 p-2 rounded mx-auto bg-light shadow">
@@ -28,7 +28,12 @@
             <div class="col col-11 mx-auto">
                 <form action="/record" method="POST" class="row bg-white rounded shadow-sm p-2 add-todo-wrapper align-items-center justify-content-center">
                     <div class="col">
-                        <input name="Item" class="form-control form-control-lg border-0 add-todo-input bg-transparent rounded" type="text" placeholder="Add new ..">
+                        <tr>
+                            <td></td><input name="Cname" class="form-control form-control-lg border-0 add-todo-input bg-transparent rounded" type="json" placeholder="Country"></td>
+                            <td><input name="Disease_code" class="form-control form-control-lg border-0 add-todo-input bg-transparent rounded" type="json" placeholder="Disease"></td>
+                            <td><input name="Total_patients" class="form-control form-control-lg border-0 add-todo-input bg-transparent rounded" type="json" placeholder="Patients"></td>
+                            <td><input name="Total_deaths" class="form-control form-control-lg border-0 add-todo-input bg-transparent rounded" type="json" placeholder="Deaths"></td>
+                        </tr>
                     </div>
                     <div class="col-auto px-0 mx-0 mr-2">
                         <button type="submit" class="btn">Add</button>
@@ -44,18 +49,27 @@
                 {{range .Records}}
                 <div class="row px-3 align-items-center todo-item editing rounded">
                     <div class="col px-1 m-1 d-flex align-items-center">
-                        <input type="text" class="form-control form-control-lg border-0 edit-todo-input bg-transparent rounded px-3 d-none" readonly value="{{.}}" title="{{.}}" />
-                        <input  id="{{.}}"  type="text" class="form-control form-control-lg border-0 edit-todo-input rounded px-3" value="{{.}}" />
+                        <tr>
+                            <td><input type="text" class="form-control form-control-lg border-0 edit-todo-input bg-transparent rounded px-3 d-none" readonly value="{{.Cname}}" title="{{.Cname}}" />
+                                <input  id="{{.Cname}}"  type="text" class="form-control form-control-lg border-0 edit-todo-input rounded px-3" value="{{.Cname}}" /></td>
+                            <td><input type="text" class="form-control form-control-lg border-0 edit-todo-input bg-transparent rounded px-3 d-none" readonly value="{{.Disease_code}}" title="{{.Disease_code}}" />
+                                <input  id="{{.Disease_code}}"  type="text" class="form-control form-control-lg border-0 edit-todo-input rounded px-3" value="{{.Disease_code}}" /></td>
+                            <td><input type="text" class="form-control form-control-lg border-0 edit-todo-input bg-transparent rounded px-3 d-none" readonly value="{{.Total_patients}}" title="{{.Total_patients}}" />
+                                <input  id="{{.Total_patients}}"  type="text" class="form-control form-control-lg border-0 edit-todo-input rounded px-3" value="{{.Total_patients}}" /></td>
+                            <td><input type="text" class="form-control form-control-lg border-0 edit-todo-input bg-transparent rounded px-3 d-none" readonly value="{{.Total_deaths}}" title="{{.Total_deaths}}" />
+                                <input  id="{{.Total_deaths}}"  type="text" class="form-control form-control-lg border-0 edit-todo-input rounded px-3" value="{{.Total_deaths}}" /></td>
+                        </tr>
                     </div>
                     <div class="col-auto m-1 p-0 px-3 d-none">
                     </div>
+                    
                     <div class="col-auto m-1 p-0 todo-actions">
                         <div class="row d-flex align-items-center justify-content-end">
                             <h5 class="m-0 p-0 px-2">
-                                <i onclick="updateDb('{{.}}')" class="fa fa-pencil text-warning btn m-0 p-0" data-toggle="tooltip" data-placement="bottom" title="Edit todo"></i>
+                                <i onclick="updateDb('{{.Cname}}', '{{.Disease_code}}', '{{.Total_patients}}', '{{.Total_deaths}}')" class="fa fa-pencil text-warning btn m-0 p-0" data-toggle="tooltip" data-placement="bottom" title="Edit todo"></i>
                             </h5>
                             <h5 class="m-0 p-0 px-2">
-                                <i onclick="removeFromDb('{{.}}')" class="fa fa-trash-o text-danger btn m-0 p-0" data-toggle="tooltip" data-placement="bottom" title="Delete todo"></i>
+                                <i onclick="removeFromDb('{{.Cname}}', '{{.Disease_code}}')" class="fa fa-trash-o text-danger btn m-0 p-0" data-toggle="tooltip" data-placement="bottom" title="Delete todo"></i>
                             </h5>
                         </div>
                     </div>

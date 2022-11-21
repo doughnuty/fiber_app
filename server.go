@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -13,20 +14,14 @@ import (
 )
 
 type Record struct {
-	cname          string
-	disease_code   string
-	total_deaths   int
-	total_patients int
+	Cname          string
+	Disease_code   string
+	Total_deaths   int
+	Total_patients int
 }
 
 func main() {
-	connStr, ok := os.LookupEnv("DATABASE_URL")
-	if !ok {
-		log.Println("Couldn't get database url. Exiting")
-		return
-	} else {
-		log.Println("Database url: ", connStr)
-	}
+	connStr := "postgresql://postgres:psql@localhost:5432/meddb?sslmode=disable"
 	log.Println(connStr)
 	db, err := sql.Open("postgres", connStr)
 	defer db.Close()
@@ -99,7 +94,7 @@ func getRecordHandler(c *fiber.Ctx, db *sql.DB) error {
 		return err
 	}
 	for rows.Next() {
-		if err = rows.Scan(&r.cname, &r.disease_code, &r.total_deaths, &r.total_patients); err != nil {
+		if err = rows.Scan(&r.Cname, &r.Disease_code, &r.Total_deaths, &r.Total_patients); err != nil {
 			log.Println(err)
 			break
 		}
@@ -158,8 +153,8 @@ func postRecordHandler(c *fiber.Ctx, db *sql.DB) error {
 		return c.SendString(err.Error())
 	}
 	fmt.Printf("%v", newRecord)
-	if newRecord.cname != "" && newRecord.disease_code != "" {
-		_, err := db.Exec("INSERT into record VALUES ($1, $2, $3, $4, $5)", email, newRecord.cname, newRecord.disease_code, newRecord.total_deaths, newRecord.total_patients)
+	if newRecord.Cname != "" && newRecord.Disease_code != "" {
+		_, err := db.Exec("INSERT into record VALUES ($1, $2, $3, $4, $5)", email, newRecord.Cname, newRecord.Disease_code, newRecord.Total_deaths, newRecord.Total_patients)
 		if err != nil {
 			log.Fatalf("An error occured while executing query: %v", err)
 		}
@@ -174,9 +169,18 @@ func putRecordHandler(c *fiber.Ctx, db *sql.DB) error {
 		return c.Redirect("/login")
 	}
 
-	olditem := c.Query("olditem")
-	newitem := c.Query("newitem")
-	db.Exec("UPDATE todos SET item=$1 WHERE item=$2", newitem, olditem)
+	cname := c.Query("cname")
+	disease_code := c.Query("disease_code")
+	total_patients, _ := strconv.Atoi(c.Query("total_patients"))
+	total_deaths, _ := strconv.Atoi(c.Query("total_deaths"))
+	if cname == "" || disease_code == "" {
+		return c.Redirect("/record")
+	}
+	log.Println(cname, disease_code, total_patients, total_deaths)
+	_, err := db.Exec("UPDATE record SET total_patients=$3, total_deaths=$4 WHERE email=$5 AND cname=$1 AND disease_code=$2", cname, disease_code, total_patients, total_deaths, email)
+	if err != nil {
+		log.Printf(err.Error())
+	}
 
 	return c.Redirect("/record")
 }
@@ -187,9 +191,12 @@ func deleteRecordHandler(c *fiber.Ctx, db *sql.DB) error {
 		return c.Redirect("/login")
 	}
 
-	todoToDelete := c.Query("item")
-	db.Exec("DELETE from todos WHERE item=$1", todoToDelete)
-
+	cname := c.Query("cname")
+	disease_code := c.Query("disease_code")
+	_, err := db.Exec("DELETE from record WHERE email=$1 AND cname=$2 AND disease_code=$3", email, cname, disease_code)
+	if err != nil {
+		log.Printf(err.Error())
+	}
 	return c.Redirect("/record")
 }
 

@@ -12,6 +12,26 @@
 
 
    <title>Disease Types</title>
+
+   <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"> </script>
+
+    <script>
+
+        $(function() {
+
+
+        var people = [];
+
+        $.getJSON('people.json', function(data) {
+            $.each(data.person, function(i, f) {
+                var tblRow = "<tr>" + "<td>" + f.firstName + "</td>" +
+                "<td>" + f.lastName + "</td>" + "<td>" + f.job + "</td>" + "<td>" + f.roll + "</td>" + "</tr>"
+                $(tblRow).appendTo("#userdata tbody");
+            });
+
+        });
+    });
+    </script>
 </head>
 <body>
    <div class="container m-5 p-2 rounded mx-auto bg-light shadow">
@@ -29,7 +49,7 @@
             <div class="col col-11 mx-auto">
                 <form action="/" method="POST" class="row bg-white rounded shadow-sm p-2 add-todo-wrapper align-items-center justify-content-center">
                     <div class="col">
-                        <input name="Item" class="form-control form-control-lg border-0 add-todo-input bg-transparent rounded" type="text" placeholder="Add new ..">
+                        <input name="Item" class="form-control form-control-lg border-0 add-todo-input bg-transparent rounded" type="json" placeholder="Add new ..">
                     </div>
                     <div class="col-auto px-0 mx-0 mr-2">
                         <button type="submit" class="btn">Add</button>
