@@ -96,7 +96,7 @@ func postLoginHandler(c *fiber.Ctx, db *sql.DB) error {
 	}
 	// fmt.Printf("%v", r.Email)
 	var email string
-	err := db.QueryRow("select email from users where email=?", r.Email).Scan(&email)
+	err := db.QueryRow("select email from users where email=$1", r.Email).Scan(&email)
 	if err != nil {
 		log.Printf("query error: %v\n", err)
 		return c.SendString("Email of Public Servant not found")
